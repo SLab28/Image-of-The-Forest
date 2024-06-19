@@ -1,2 +1,2 @@
-# Image-of-The-Forest-
+# Image-of-The-Forest
 Dataset companion for www.imageoftheforest.com

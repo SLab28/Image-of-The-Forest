@@ -1,4 +1,4 @@
-# NeuroStream (Windows)
+# muse-receiver (Windows)
 
 A minimal, dark-themed desktop application to:
 

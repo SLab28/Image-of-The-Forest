@@ -22,7 +22,13 @@ import numpy as np
 import pyqtgraph as pg
 from pylsl import StreamInlet, resolve_byprop
 
-from app.muse_control import list_devices as muse_list_devices, start_stream as muse_start_stream, stop_stream as muse_stop_stream, muselsl_available
+# Support running as `python -m app.main` (preferred) or `python app/main.py`
+try:
+	from app.muse_control import list_devices as muse_list_devices, start_stream as muse_start_stream, stop_stream as muse_stop_stream, muselsl_available
+except ModuleNotFoundError:
+	# Add project root (parent of `app/`) to sys.path so `app` is importable
+	sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+	from app.muse_control import list_devices as muse_list_devices, start_stream as muse_start_stream, stop_stream as muse_stop_stream, muselsl_available
 
 APP_TITLE = "Muse Viewer (Minimal)"
 FS_EEG_FALLBACK = 256.0

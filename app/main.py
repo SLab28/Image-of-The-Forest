@@ -30,6 +30,7 @@ from app.processing import (
 	interpolate_topomap,
 	simple_contact_quality,
 	BANDS,
+	estimate_heart_rate_ppg,
 )
 from app.preprocessing_mne import filter_eeg_mne, filter_ppg_mne, psd_welch_mne
 from app.muse_control import list_devices as muse_list_devices, start_stream as muse_start_stream, stop_stream as muse_stop_stream, muselsl_available
@@ -326,7 +327,7 @@ class MainWindow(QMainWindow):
 			self.status.showMessage("Selected device has no address.", 4000)
 			return
 		try:
-			self.muse_proc = muse_start_stream(address=address, acc=True, gyro=True, ppg=True)
+			self.muse_proc = muse_start_stream(name_or_address=address, acc=True, gyro=True, ppg=True)
 			if self.muse_proc is None:
 				raise RuntimeError("muselsl not available")
 			self.status.showMessage(f"Starting muselsl stream at {address}...")
@@ -502,9 +503,13 @@ class MainWindow(QMainWindow):
 			except Exception:
 				ppg_filt = ppg_all[0]
 			self.ts_ppg_curve.setData(ts_ppg, ppg_filt)
-			# HR estimate (simple peak search via PSD already in earlier helper; keep label minimal here)
-			# Compute PSD in HR band via numpy for robustness if MNE missing
-			# Kept minimal as HR proxy is already shown in spectral tab
+			# HR estimate
+			try:
+				bpm, conf = estimate_heart_rate_ppg(ppg_filt, fs=self.fs_ppg)
+				if np.isfinite(bpm):
+					self.hr_label.setText(f"HR: {bpm:.0f} bpm (conf {conf:.2f})")
+			except Exception:
+				pass
 
 		# Topography and quality from filtered EEG
 		_, eeg_topo = self.buf_eeg.get_last(int(self.fs_eeg * 2))

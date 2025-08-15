@@ -6,6 +6,12 @@ from typing import Dict, List, Tuple
 import numpy as np
 from scipy.signal import welch
 
+try:
+	from mne.filter import filter_data, notch_filter  # type: ignore
+except Exception:  # pragma: no cover
+	filter_data = None
+	notch_filter = None
+
 
 # State-of-the-art inspired canonical EEG bands (can be adapted per age/task)
 BANDS: Dict[str, Tuple[float, float]] = {
@@ -110,3 +116,26 @@ def estimate_heart_rate_ppg(ppg: np.ndarray, fs: float) -> Tuple[float, float]:
 	peak_power = float(pband[peak_idx])
 	conf = max(0.0, min(1.0, peak_power / (power_total + 1e-12)))
 	return bpm, conf
+
+
+def preprocess_eeg_window(eeg_window: np.ndarray, fs: float, mains_hz: int = 50) -> np.ndarray:
+	"""Apply MNE-based preprocessing to an EEG window: notch + band-pass (1–45 Hz).
+	Input shape: (channels, samples). Returns filtered array with same shape.
+	"""
+	if eeg_window.size == 0:
+		return eeg_window
+	data = np.ascontiguousarray(eeg_window)
+	try:
+		freqs = [mains_hz]
+		# Include first harmonic to better suppress line noise
+		if mains_hz in (50, 60):
+			freqs.append(mains_hz * 2)
+		if notch_filter is not None:
+			data = notch_filter(data, Fs=fs, freqs=freqs, method='spectrum_fit', axis=1, verbose='ERROR')
+		if filter_data is not None:
+			# Zero-phase FIR to avoid phase distortion (small latency OK for display)
+			data = filter_data(data, sfreq=fs, l_freq=1.0, h_freq=45.0, method='fir', phase='zero-double', axis=1, verbose='ERROR')
+		return data
+	except Exception:
+		# Fallback: return original if MNE not available or filtering fails
+		return eeg_window

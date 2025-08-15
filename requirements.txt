@@ -1,10 +1,8 @@
 pylsl>=1.16,<2
 numpy>=1.24,<2.1
-scipy>=1.10,<2
 PySide6>=6.6,<7
 pyqtgraph>=0.13,<0.14
-# Optional but recommended for BLE discovery/streaming of Muse
+# BLE discovery/streaming of Muse
 muselsl>=2.2,<3
-mne>=1.7,<2
 # BLE backend (muselsl uses bleak)
 bleak>=0.21,<0.23
